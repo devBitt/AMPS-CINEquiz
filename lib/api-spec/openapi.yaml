@@ -1,0 +1,844 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: CineQuiz Live API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Admin authentication
+  - name: participants
+    description: Participant registration
+  - name: competition
+    description: Competition management
+  - name: rounds
+    description: Round management
+  - name: qualifications
+    description: Qualification management
+  - name: admin
+    description: Admin operations
+  - name: submissions
+    description: Submission management
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /server-time:
+    get:
+      operationId: getServerTime
+      tags: [health]
+      summary: Server time
+      description: Returns server timestamp for clock synchronization
+      responses:
+        "200":
+          description: Server time
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerTime"
+
+  /auth/login:
+    post:
+      operationId: adminLogin
+      tags: [auth]
+      summary: Admin login
+      description: Authenticate admin and receive JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminCredentials"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthToken"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /participants/register:
+    post:
+      operationId: registerParticipant
+      tags: [participants]
+      summary: Register participant
+      description: Register a participant by roll number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParticipantRegistration"
+      responses:
+        "201":
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParticipantSession"
+        "400":
+          description: Invalid roll number or competition not in waiting state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Roll number already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /competition:
+    get:
+      operationId: getCompetition
+      tags: [competition]
+      summary: Get active competition
+      description: Returns current active competition with rounds (answers excluded)
+      responses:
+        "200":
+          description: Competition data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionDetail"
+        "404":
+          description: No active competition
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: createCompetition
+      tags: [competition]
+      summary: Create competition (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompetitionInput"
+      responses:
+        "201":
+          description: Competition created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionDetail"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /competition/{id}:
+    patch:
+      operationId: updateCompetition
+      tags: [competition]
+      summary: Update competition status (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompetitionUpdate"
+      responses:
+        "200":
+          description: Competition updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionDetail"
+        "404":
+          description: Competition not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /competition/{id}/emergency-stop:
+    post:
+      operationId: emergencyStop
+      tags: [competition]
+      summary: Emergency stop (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Competition stopped
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /rounds:
+    post:
+      operationId: createRound
+      tags: [rounds]
+      summary: Create or update a round (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoundInput"
+      responses:
+        "201":
+          description: Round created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Round"
+
+  /rounds/{id}:
+    get:
+      operationId: getRound
+      tags: [rounds]
+      summary: Get round details (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Round data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Round"
+
+  /rounds/{id}/start:
+    post:
+      operationId: startRound
+      tags: [rounds]
+      summary: Start a round (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Round started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Round"
+        "400":
+          description: Round cannot be started
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /rounds/{id}/end:
+    post:
+      operationId: endRound
+      tags: [rounds]
+      summary: End a round early (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Round ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Round"
+
+  /qualifications/{roundId}:
+    get:
+      operationId: getQualifications
+      tags: [qualifications]
+      summary: Get qualifications for a round (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: roundId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Qualification list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QualificationDetail"
+
+  /qualifications/override:
+    post:
+      operationId: overrideQualification
+      tags: [qualifications]
+      summary: Override a qualification (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QualificationOverride"
+      responses:
+        "200":
+          description: Override applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /participants:
+    get:
+      operationId: listParticipants
+      tags: [participants]
+      summary: List all participants (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: competitionId
+          schema:
+            type: string
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Participants list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ParticipantDetail"
+
+  /admin/finalist-reveal:
+    post:
+      operationId: revealFinalists
+      tags: [admin]
+      summary: Trigger finalist reveal on projector (admin)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FinalistRevealInput"
+      responses:
+        "200":
+          description: Reveal triggered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/stats:
+    get:
+      operationId: getStats
+      tags: [admin]
+      summary: Get competition statistics (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: competitionId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Competition statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompetitionStats"
+
+  /admin/audit-logs:
+    get:
+      operationId: getAuditLogs
+      tags: [admin]
+      summary: Get audit logs (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Audit logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AuditLog"
+
+  /submissions/export:
+    get:
+      operationId: exportSubmissions
+      tags: [submissions]
+      summary: Export submissions as CSV (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: competitionId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: CSV data
+          content:
+            text/csv:
+              schema:
+                type: string
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ServerTime:
+      type: object
+      properties:
+        serverTime:
+          type: integer
+      required:
+        - serverTime
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: ["string", "null"]
+      required:
+        - success
+
+    AdminCredentials:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+        adminId:
+          type: string
+        username:
+          type: string
+      required:
+        - token
+        - adminId
+        - username
+
+    ParticipantRegistration:
+      type: object
+      properties:
+        rollNumber:
+          type: string
+          minLength: 3
+          maxLength: 20
+        competitionId:
+          type: string
+      required:
+        - rollNumber
+        - competitionId
+
+    ParticipantSession:
+      type: object
+      properties:
+        participantId:
+          type: string
+        sessionToken:
+          type: string
+        competitionId:
+          type: string
+        rollNumber:
+          type: string
+      required:
+        - participantId
+        - sessionToken
+        - competitionId
+        - rollNumber
+
+    ParticipantDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        rollNumber:
+          type: string
+        registeredAt:
+          type: string
+        currentStatus:
+          type: string
+        round1Status:
+          type: ["string", "null"]
+        round2Status:
+          type: ["string", "null"]
+        round3Status:
+          type: ["string", "null"]
+        round4Status:
+          type: ["string", "null"]
+      required:
+        - id
+        - rollNumber
+        - registeredAt
+        - currentStatus
+
+    Competition:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        currentRound:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - status
+        - currentRound
+        - createdAt
+
+    CompetitionDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        currentRound:
+          type: integer
+        createdAt:
+          type: string
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundPublic"
+        participantCount:
+          type: integer
+      required:
+        - id
+        - name
+        - status
+        - currentRound
+        - createdAt
+        - rounds
+        - participantCount
+
+    CompetitionInput:
+      type: object
+      properties:
+        name:
+          type: string
+        rounds:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundInput"
+      required:
+        - name
+
+    CompetitionUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+
+    Round:
+      type: object
+      properties:
+        id:
+          type: string
+        competitionId:
+          type: string
+        roundNumber:
+          type: integer
+        emojiClue:
+          type: string
+        correctAnswers:
+          type: array
+          items:
+            type: string
+        timeLimitSeconds:
+          type: integer
+        status:
+          type: string
+        startedAt:
+          type: ["string", "null"]
+        endedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - competitionId
+        - roundNumber
+        - emojiClue
+        - timeLimitSeconds
+        - status
+
+    RoundPublic:
+      type: object
+      properties:
+        id:
+          type: string
+        roundNumber:
+          type: integer
+        emojiClue:
+          type: string
+        timeLimitSeconds:
+          type: integer
+        status:
+          type: string
+        startedAt:
+          type: ["string", "null"]
+        endedAt:
+          type: ["string", "null"]
+      required:
+        - id
+        - roundNumber
+        - emojiClue
+        - timeLimitSeconds
+        - status
+
+    RoundInput:
+      type: object
+      properties:
+        competitionId:
+          type: string
+        roundNumber:
+          type: integer
+        emojiClue:
+          type: string
+        correctAnswers:
+          type: array
+          items:
+            type: string
+        timeLimitSeconds:
+          type: integer
+      required:
+        - competitionId
+        - roundNumber
+        - emojiClue
+        - correctAnswers
+        - timeLimitSeconds
+
+    QualificationDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        participantId:
+          type: string
+        rollNumber:
+          type: string
+        roundId:
+          type: string
+        qualified:
+          type: boolean
+        qualificationReason:
+          type: ["string", "null"]
+        overrideByAdmin:
+          type: boolean
+        createdAt:
+          type: string
+      required:
+        - id
+        - participantId
+        - rollNumber
+        - roundId
+        - qualified
+        - overrideByAdmin
+        - createdAt
+
+    QualificationOverride:
+      type: object
+      properties:
+        participantId:
+          type: string
+        roundId:
+          type: string
+        qualified:
+          type: boolean
+      required:
+        - participantId
+        - roundId
+        - qualified
+
+    FinalistRevealInput:
+      type: object
+      properties:
+        competitionId:
+          type: string
+      required:
+        - competitionId
+
+    CompetitionStats:
+      type: object
+      properties:
+        totalParticipants:
+          type: integer
+        roundStats:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoundStat"
+        finalists:
+          type: array
+          items:
+            $ref: "#/components/schemas/FinalistInfo"
+      required:
+        - totalParticipants
+        - roundStats
+        - finalists
+
+    RoundStat:
+      type: object
+      properties:
+        roundNumber:
+          type: integer
+        totalSubmissions:
+          type: integer
+        correctSubmissions:
+          type: integer
+        qualifiedCount:
+          type: integer
+        eliminatedCount:
+          type: integer
+        avgResponseTimeMs:
+          type: ["integer", "null"]
+      required:
+        - roundNumber
+        - totalSubmissions
+        - correctSubmissions
+        - qualifiedCount
+        - eliminatedCount
+
+    FinalistInfo:
+      type: object
+      properties:
+        id:
+          type: string
+        rollNumber:
+          type: string
+      required:
+        - id
+        - rollNumber
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        adminId:
+          type: string
+        action:
+          type: string
+        details:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - adminId
+        - action
+        - createdAt

@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.local/
+
+# Database files (local data)
+artifacts/api-server/cinequiz.db
+artifacts/api-server/cinequiz.db-shm
+artifacts/api-server/cinequiz.db-wal
+
+# Build outputs
+artifacts/api-server/dist/
+artifacts/cinequiz/dist/
+lib/*/dist/
+*.tsbuildinfo
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Temp/scratch files
+fix_load_test.mjs
+scratch_query.js
+test_api.ps1
+load-test.mjs
