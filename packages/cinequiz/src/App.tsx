@@ -49,6 +49,7 @@ function Router() {
       <Route path="/eliminated" component={Eliminated} />
       <Route path="/projector" component={Projector} />
       
+      <Route path="/admin" component={AdminLogin} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/dashboard" component={AdminDashboard} />
       
