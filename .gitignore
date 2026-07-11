@@ -4,13 +4,14 @@ node_modules/
 .local/
 
 # Database files (local data)
-artifacts/api-server/cinequiz.db
-artifacts/api-server/cinequiz.db-shm
-artifacts/api-server/cinequiz.db-wal
+packages/api-server/cinequiz.db
+packages/api-server/cinequiz.db-shm
+packages/api-server/cinequiz.db-wal
 
 # Build outputs
-artifacts/api-server/dist/
-artifacts/cinequiz/dist/
+packages/api-server/dist/
+packages/cinequiz/dist/
+packages/mockup-sandbox/dist/
 lib/*/dist/
 *.tsbuildinfo
 
