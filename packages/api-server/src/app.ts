@@ -3,6 +3,9 @@ import { createServer, type Server as HttpServer } from "node:http";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import helmet from "helmet";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 
@@ -32,6 +35,28 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use("/api", router);
+
+// Serve frontend in production
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// In dist/ (prod), __dirname is packages/api-server/dist
+// In src/ (dev), __dirname is packages/api-server/src
+// We want to point to packages/cinequiz/dist/public
+const frontendPath = path.resolve(__dirname, "..", "..", "cinequiz", "dist", "public");
+
+if (fs.existsSync(frontendPath)) {
+  app.use(express.static(frontendPath));
+
+  // Catch-all route for React Router
+  app.use((req, res, next) => {
+    // Only serve index.html for non-API GET requests
+    if (req.method !== 'GET' || req.path.startsWith("/api")) return next();
+    res.sendFile(path.join(frontendPath, "index.html"));
+  });
+} else {
+  logger.warn(`Frontend build not found at ${frontendPath}. If this is production, please build the frontend first.`);
+}
 
 export { app, httpServer };
 export default app;

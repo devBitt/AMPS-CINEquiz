@@ -47,7 +47,8 @@ function seedIfEmpty() {
   logger.info("Seeding database with initial data...");
 
   const adminId = uuidv4();
-  const passwordHash = bcrypt.hashSync("cinequiz2024", 10);
+  const adminPassword = process.env.ADMIN_PASSWORD || "cinequiz2024";
+  const passwordHash = bcrypt.hashSync(adminPassword, 10);
   db.prepare("INSERT INTO admins (id, username, password_hash) VALUES (?, ?, ?)").run(
     adminId, "admin", passwordHash
   );
