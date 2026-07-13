@@ -59,11 +59,11 @@ function seedIfEmpty() {
   );
 
   const rounds = [
-    { number: 1, emoji: "https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=1000&q=80", answers: ["the lion king", "lion king"], time: 20 },
-    { number: 2, emoji: "https://images.unsplash.com/photo-1635805737707-575885ab0820?w=1000&q=80", answers: ["spider-man", "spiderman", "spider man"], time: 35 },
-    { number: 3, emoji: "https://images.unsplash.com/photo-1483141994026-e440758241b2?w=1000&q=80", answers: ["frozen"], time: 40 },
-    { number: 4, emoji: "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1000&q=80", answers: ["transformers"], time: 50 },
-    { number: 5, emoji: "https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=1000&q=80", answers: ["the dark knight", "dark knight", "batman"], time: 60 },
+    { number: 1, emoji: JSON.stringify(["https://images.unsplash.com/photo-1546182990-dffeafbe841d?w=1000&q=80", "https://images.unsplash.com/photo-1575550959106-5a7defe28b56?w=1000&q=80"]), answers: ["the lion king", "lion king"], time: 20 },
+    { number: 2, emoji: JSON.stringify(["https://images.unsplash.com/photo-1635805737707-575885ab0820?w=1000&q=80", "https://images.unsplash.com/photo-1608889175123-8ec330b86f84?w=1000&q=80"]), answers: ["spider-man", "spiderman", "spider man"], time: 35 },
+    { number: 3, emoji: JSON.stringify(["https://images.unsplash.com/photo-1483141994026-e440758241b2?w=1000&q=80", "https://images.unsplash.com/photo-1518241353330-0f7941c2d9b5?w=1000&q=80"]), answers: ["frozen"], time: 40 },
+    { number: 4, emoji: JSON.stringify(["https://images.unsplash.com/photo-1534447677768-be436bb09401?w=1000&q=80", "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?w=1000&q=80"]), answers: ["transformers"], time: 50 },
+    { number: 5, emoji: JSON.stringify(["https://images.unsplash.com/photo-1509248961158-e54f6934749c?w=1000&q=80", "https://images.unsplash.com/photo-1534375971785-5c18f593cf9a?w=1000&q=80"]), answers: ["the dark knight", "dark knight", "batman"], time: 60 },
   ];
 
   const insertRound = db.prepare(

@@ -4,7 +4,7 @@ import socket from '@/socket/socket';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGetCompetition } from '@workspace/api-client-react';
-import { isImageClue } from '@/lib/utils';
+import { isImageClue, parseClues } from '@/lib/utils';
 
 type ProjectorPhase = 'lobby' | 'round_intro' | 'countdown' | 'question' | 'results' | 'finalist_reveal';
 
@@ -226,18 +226,26 @@ export default function Projector() {
             {/* Center Clue */}
             <div className="flex-1 flex items-center justify-center pt-28 pb-12">
               {isImg ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.6, ease: "easeOut" }}
-                  className="w-[75vw] max-h-[60vh] aspect-video overflow-hidden rounded-3xl border-2 border-white/15 bg-black/60 shadow-2xl flex items-center justify-center p-2 bg-gradient-to-br from-white/10 to-white/0"
-                >
-                  <img 
-                    src={round.emojiClue} 
-                    alt="Cinema Frame" 
-                    className="w-full h-full object-contain rounded-2xl"
-                  />
-                </motion.div>
+                <div className={`grid gap-8 items-center justify-center ${
+                  parseClues(round.emojiClue).length === 1 ? 'grid-cols-1 max-w-[80vw]' : 'grid-cols-2 max-w-[90vw]'
+                }`}>
+                  {parseClues(round.emojiClue).map((clue, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      transition={{ duration: 0.5, ease: "easeOut", delay: idx * 0.15 }}
+                      className="aspect-video overflow-hidden rounded-3xl border-2 border-white/15 bg-black/60 shadow-2xl flex items-center justify-center p-2 bg-gradient-to-br from-white/10 to-white/0 max-h-[55vh]"
+                      style={{ width: parseClues(round.emojiClue).length === 1 ? '75vw' : '42vw' }}
+                    >
+                      <img 
+                        src={clue} 
+                        alt={`Cinema Frame ${idx + 1}`} 
+                        className="w-full h-full object-contain rounded-2xl"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
               ) : (
                 <div className="flex justify-center flex-wrap gap-8 max-w-[80vw]">
                   <AnimatePresence>

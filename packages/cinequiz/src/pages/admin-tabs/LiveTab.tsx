@@ -3,7 +3,7 @@ import { useStartRound, useEndRound, useRevealFinalists } from '@workspace/api-c
 import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import socket from '@/socket/socket';
-import { isImageClue } from '@/lib/utils';
+import { isImageClue, parseClues } from '@/lib/utils';
 
 export default function AdminLiveTab({ competition, refetch }: { competition: any, refetch: () => void }) {
   const [timerRemaining, setTimerRemaining] = useState(0);
@@ -107,8 +107,12 @@ export default function AdminLiveTab({ competition, refetch }: { competition: an
             <div>
               <div className="text-6xl font-display text-primary tracking-widest mb-4">ROUND {activeRound?.roundNumber || competition.currentRound}</div>
               {activeRound && isImageClue(activeRound.emojiClue) ? (
-                <div className="w-56 h-32 mx-auto rounded-xl overflow-hidden border border-white/20 bg-black/40 shadow-inner flex items-center justify-center">
-                  <img src={activeRound.emojiClue} alt="Active Clue Frame" className="w-full h-full object-cover" />
+                <div className="flex gap-2 flex-wrap justify-center max-w-md mx-auto">
+                  {parseClues(activeRound.emojiClue).map((clue, idx) => (
+                    <div key={idx} className="w-24 h-16 rounded-lg overflow-hidden border border-white/20 bg-black/40 shadow-inner flex items-center justify-center flex-shrink-0">
+                      <img src={clue} alt={`Active Clue Frame ${idx + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="text-4xl drop-shadow-lg font-sans">{activeRound?.emojiClue}</div>

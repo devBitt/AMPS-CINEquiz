@@ -4,16 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'react-hot-toast';
 import { QRCodeCanvas } from 'qrcode.react';
-import { isImageClue } from '@/lib/utils';
-import { Trash2 as TrashIcon, Upload as UploadIcon, Film as FilmIcon, Plus as PlusIcon } from 'lucide-react';
+import { Trash2 as TrashIcon, Plus as PlusIcon } from 'lucide-react';
 
 export default function AdminSetupTab({ competition, refetch }: { competition: any, refetch: () => void }) {
   const [name, setName] = useState('CineQuiz 2024');
   const [rounds, setRounds] = useState([
-    { emojiClue: '', correctAnswers: 'batman,the dark knight,the batman', timeLimitSeconds: 35 },
-    { emojiClue: '', correctAnswers: 'titanic', timeLimitSeconds: 30 },
-    { emojiClue: '', correctAnswers: 'spider-man,spiderman', timeLimitSeconds: 25 },
-    { emojiClue: '', correctAnswers: 'lord of the rings,the lord of the rings', timeLimitSeconds: 20 },
+    { clues: [] as string[], correctAnswers: 'batman,the dark knight,the batman', timeLimitSeconds: 35 },
+    { clues: [] as string[], correctAnswers: 'titanic', timeLimitSeconds: 30 },
+    { clues: [] as string[], correctAnswers: 'spider-man,spiderman', timeLimitSeconds: 25 },
+    { clues: [] as string[], correctAnswers: 'lord of the rings,the lord of the rings', timeLimitSeconds: 20 },
   ]);
 
   const createMut = useCreateCompetition();
@@ -28,8 +27,8 @@ export default function AdminSetupTab({ competition, refetch }: { competition: a
       return;
     }
     for (let i = 0; i < rounds.length; i++) {
-      if (!rounds[i].emojiClue.trim()) {
-        toast.error(`Round ${i + 1} clue image is required`);
+      if (!rounds[i].clues || rounds[i].clues.length === 0) {
+        toast.error(`Round ${i + 1} clue frame is required`);
         return;
       }
       if (!rounds[i].correctAnswers.trim()) {
@@ -45,7 +44,7 @@ export default function AdminSetupTab({ competition, refetch }: { competition: a
         rounds: rounds.map((r, i) => ({
           competitionId: '',  // ignored by server when creating alongside competition
           roundNumber: i + 1,
-          emojiClue: r.emojiClue,
+          emojiClue: JSON.stringify(r.clues),
           correctAnswers: r.correctAnswers.split(',').map((s: string) => s.trim().toLowerCase()),
           timeLimitSeconds: r.timeLimitSeconds
         })) as any
@@ -68,7 +67,7 @@ export default function AdminSetupTab({ competition, refetch }: { competition: a
   };
 
   const addRound = () => {
-    setRounds([...rounds, { emojiClue: '', correctAnswers: '', timeLimitSeconds: 30 }]);
+    setRounds([...rounds, { clues: [], correctAnswers: '', timeLimitSeconds: 30 }]);
   };
 
   const removeRound = (index: number) => {
@@ -80,7 +79,7 @@ export default function AdminSetupTab({ competition, refetch }: { competition: a
     setRounds(newRounds);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+  const handleAddFile = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith('image/')) {
@@ -90,10 +89,24 @@ export default function AdminSetupTab({ competition, refetch }: { competition: a
       const reader = new FileReader();
       reader.onload = (event) => {
         const base64 = event.target?.result as string;
-        updateRound(index, 'emojiClue', base64);
+        const newRounds = [...rounds];
+        newRounds[index] = {
+          ...newRounds[index],
+          clues: [...(newRounds[index].clues || []), base64]
+        };
+        setRounds(newRounds);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const removeFile = (roundIndex: number, fileIndex: number) => {
+    const newRounds = [...rounds];
+    newRounds[roundIndex] = {
+      ...newRounds[roundIndex],
+      clues: newRounds[roundIndex].clues.filter((_, idx) => idx !== fileIndex)
+    };
+    setRounds(newRounds);
   };
 
   const joinUrl = typeof window !== 'undefined' ? `${window.location.origin}${import.meta.env.BASE_URL}` : '';
@@ -145,45 +158,35 @@ export default function AdminSetupTab({ competition, refetch }: { competition: a
               <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Image Upload Zone */}
                 <div className="space-y-1">
-                  <label className="text-[10px] uppercase text-muted-foreground tracking-wider font-semibold">Frame Clue (Image)</label>
-                  <div className="relative h-32 rounded-xl border border-dashed border-white/10 hover:border-white/20 bg-black/20 overflow-hidden transition-colors flex items-center justify-center group/upload">
-                    {round.emojiClue ? (
-                      <>
-                        <img src={round.emojiClue} alt={`Round ${i+1} Frame`} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/upload:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                          <label className="flex items-center justify-center p-2 bg-white/10 hover:bg-white/20 border border-white/10 rounded-lg cursor-pointer text-xs text-white font-display tracking-widest transition-all">
-                            <UploadIcon className="w-4 h-4 mr-1.5" />
-                            REPLACE
-                            <input 
-                              type="file" 
-                              accept="image/*" 
-                              onChange={e => handleFileChange(e, i)}
-                              className="hidden" 
-                            />
-                          </label>
-                          <button 
+                  <label className="text-[10px] uppercase text-muted-foreground tracking-wider font-semibold">Frame Clues (Multiple Images)</label>
+                  <div className="flex flex-wrap gap-2.5 items-center min-h-[96px] p-2.5 rounded-xl border border-white/5 bg-black/30">
+                    {round.clues && round.clues.map((clue, fileIdx) => (
+                      <div key={fileIdx} className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10 group/file bg-black/40 flex-shrink-0">
+                        <img src={clue} alt={`Clue ${fileIdx + 1}`} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover/file:opacity-100 transition-opacity flex items-center justify-center">
+                          <button
                             type="button"
-                            onClick={() => updateRound(i, 'emojiClue', '')}
-                            className="flex items-center justify-center p-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 rounded-lg text-xs text-red-400 font-display tracking-widest transition-all"
+                            onClick={() => removeFile(i, fileIdx)}
+                            className="p-1 bg-red-500 rounded-full hover:bg-red-600 text-white transition-colors"
+                            title="Remove frame"
                           >
-                            <TrashIcon className="w-4 h-4 mr-1.5" />
-                            DELETE
+                            <TrashIcon className="w-3 h-3" />
                           </button>
                         </div>
-                      </>
-                    ) : (
-                      <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer p-4 text-center hover:bg-white/5 transition-colors">
-                        <UploadIcon className="w-8 h-8 text-muted-foreground opacity-60 mb-2 group-hover/upload:text-white transition-colors" />
-                        <span className="text-xs text-muted-foreground font-display tracking-widest group-hover/upload:text-white transition-colors">UPLOAD FRAME</span>
-                        <span className="text-[9px] text-muted-foreground/60 font-mono mt-1">PNG, JPG, WEBP</span>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          onChange={e => handleFileChange(e, i)}
-                          className="hidden" 
-                        />
-                      </label>
-                    )}
+                      </div>
+                    ))}
+
+                    {/* Add Frame Box */}
+                    <label className="w-20 h-20 rounded-lg border border-dashed border-white/20 hover:border-white/45 bg-black/20 hover:bg-white/5 flex flex-col items-center justify-center cursor-pointer transition-all flex-shrink-0 text-muted-foreground hover:text-white">
+                      <PlusIcon className="w-5 h-5 mb-0.5 opacity-70" />
+                      <span className="text-[9px] font-display tracking-widest text-center leading-none">ADD FRAME</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={e => handleAddFile(e, i)}
+                        className="hidden" 
+                      />
+                    </label>
                   </div>
                 </div>
 

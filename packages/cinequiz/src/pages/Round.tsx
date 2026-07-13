@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import socket from '@/socket/socket';
-import { isImageClue } from '@/lib/utils';
+import { isImageClue, parseClues } from '@/lib/utils';
 
 export default function Round() {
   const [, navigate] = useLocation();
@@ -106,19 +106,26 @@ export default function Round() {
 
           {/* Clue Area */}
           {isImg ? (
-            <div className="w-full mb-16 px-4">
-              <motion.div
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className="relative overflow-hidden rounded-2xl border border-white/10 bg-card shadow-2xl aspect-video flex items-center justify-center p-1 bg-gradient-to-br from-white/5 to-white/0"
-              >
-                <img 
-                  src={currentRound.emojiClue} 
-                  alt="Clue Frame" 
-                  className="w-full h-full object-contain rounded-xl"
-                />
-              </motion.div>
+            <div className="w-full mb-16 px-2">
+              <div className={`grid gap-3 w-full max-w-xl mx-auto ${
+                parseClues(currentRound.emojiClue).length === 1 ? 'grid-cols-1' : 'grid-cols-2'
+              }`}>
+                {parseClues(currentRound.emojiClue).map((clue, idx) => (
+                  <motion.div
+                    key={`${currentRound.id}-${idx}`}
+                    initial={{ opacity: 0, y: 15, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.4, ease: "easeOut", delay: idx * 0.15 }}
+                    className="relative overflow-hidden rounded-xl border border-white/10 bg-card shadow-lg aspect-video flex items-center justify-center p-1 bg-gradient-to-br from-white/5 to-white/0"
+                  >
+                    <img 
+                      src={clue} 
+                      alt={`Clue Frame ${idx + 1}`} 
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                  </motion.div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="flex justify-center flex-wrap gap-2 mb-16 min-h-[120px]">
