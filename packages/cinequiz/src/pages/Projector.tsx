@@ -4,6 +4,7 @@ import socket from '@/socket/socket';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import { useGetCompetition } from '@workspace/api-client-react';
+import { isImageClue } from '@/lib/utils';
 
 type ProjectorPhase = 'lobby' | 'round_intro' | 'countdown' | 'question' | 'results' | 'finalist_reveal';
 
@@ -203,7 +204,8 @@ export default function Projector() {
 
       case 'question':
         const progress = timerTotal > 0 ? (timerRemaining / timerTotal) * 100 : 0;
-        const emojis = round ? Array.from(new Intl.Segmenter().segment(round.emojiClue)).map(x => x.segment) : [];
+        const isImg = round && isImageClue(round.emojiClue);
+        const emojis = (round && !isImg) ? Array.from(new Intl.Segmenter().segment(round.emojiClue)).map(x => x.segment) : [];
         
         return (
           <motion.div 
@@ -222,22 +224,37 @@ export default function Projector() {
             </div>
 
             {/* Center Clue */}
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex justify-center flex-wrap gap-8 max-w-[80vw]">
-                <AnimatePresence>
-                  {emojis.map((emoji, i) => (
-                    <motion.span
-                      key={i}
-                      initial={{ scale: 0, rotate: -20 }}
-                      animate={{ scale: 1, rotate: 0 }}
-                      transition={{ type: "spring", bounce: 0.5, delay: i * 0.2 }}
-                      className="text-[15vw] drop-shadow-2xl leading-none"
-                    >
-                      {emoji}
-                    </motion.span>
-                  ))}
-                </AnimatePresence>
-              </div>
+            <div className="flex-1 flex items-center justify-center pt-28 pb-12">
+              {isImg ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
+                  className="w-[75vw] max-h-[60vh] aspect-video overflow-hidden rounded-3xl border-2 border-white/15 bg-black/60 shadow-2xl flex items-center justify-center p-2 bg-gradient-to-br from-white/10 to-white/0"
+                >
+                  <img 
+                    src={round.emojiClue} 
+                    alt="Cinema Frame" 
+                    className="w-full h-full object-contain rounded-2xl"
+                  />
+                </motion.div>
+              ) : (
+                <div className="flex justify-center flex-wrap gap-8 max-w-[80vw]">
+                  <AnimatePresence>
+                    {emojis.map((emoji, i) => (
+                      <motion.span
+                        key={i}
+                        initial={{ scale: 0, rotate: -20 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ type: "spring", bounce: 0.5, delay: i * 0.2 }}
+                        className="text-[15vw] drop-shadow-2xl leading-none"
+                      >
+                        {emoji}
+                      </motion.span>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
 
             {/* Bottom Bar: Timer + Count */}

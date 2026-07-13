@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import socket from '@/socket/socket';
+import { isImageClue } from '@/lib/utils';
 
 export default function Round() {
   const [, navigate] = useLocation();
@@ -58,7 +59,8 @@ export default function Round() {
   };
 
   // Splitting emojis for staggered animation
-  const emojis = Array.from(new Intl.Segmenter().segment(currentRound.emojiClue)).map(x => x.segment);
+  const isImg = isImageClue(currentRound.emojiClue);
+  const emojis = !isImg ? Array.from(new Intl.Segmenter().segment(currentRound.emojiClue)).map(x => x.segment) : [];
 
   return (
     <PageTransition>
@@ -102,27 +104,44 @@ export default function Round() {
             </div>
           </div>
 
-          {/* Emoji Clue */}
-          <div className="flex justify-center flex-wrap gap-2 mb-16 min-h-[120px]">
-            <AnimatePresence>
-              {emojis.map((emoji, i) => (
-                <motion.span
-                  key={`${currentRound.id}-${i}`}
-                  initial={{ scale: 0, opacity: 0, y: 50 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 20,
-                    delay: i * 0.15
-                  }}
-                  className="text-7xl md:text-8xl drop-shadow-xl"
-                >
-                  {emoji}
-                </motion.span>
-              ))}
-            </AnimatePresence>
-          </div>
+          {/* Clue Area */}
+          {isImg ? (
+            <div className="w-full mb-16 px-4">
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+                className="relative overflow-hidden rounded-2xl border border-white/10 bg-card shadow-2xl aspect-video flex items-center justify-center p-1 bg-gradient-to-br from-white/5 to-white/0"
+              >
+                <img 
+                  src={currentRound.emojiClue} 
+                  alt="Clue Frame" 
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              </motion.div>
+            </div>
+          ) : (
+            <div className="flex justify-center flex-wrap gap-2 mb-16 min-h-[120px]">
+              <AnimatePresence>
+                {emojis.map((emoji, i) => (
+                  <motion.span
+                    key={`${currentRound.id}-${i}`}
+                    initial={{ scale: 0, opacity: 0, y: 50 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 20,
+                      delay: i * 0.15
+                    }}
+                    className="text-7xl md:text-8xl drop-shadow-xl"
+                  >
+                    {emoji}
+                  </motion.span>
+                ))}
+              </AnimatePresence>
+            </div>
+          )}
 
           {/* Answer Form */}
           <div className="w-full mt-auto mb-8">
