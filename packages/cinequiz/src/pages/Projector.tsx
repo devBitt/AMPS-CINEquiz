@@ -3,6 +3,7 @@ import { PageTransition } from '@/components/PageTransition';
 import socket from '@/socket/socket';
 import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
+import { useGetCompetition } from '@workspace/api-client-react';
 
 type ProjectorPhase = 'lobby' | 'round_intro' | 'countdown' | 'question' | 'results' | 'finalist_reveal';
 
@@ -20,10 +21,12 @@ export default function Projector() {
   const [qualifiedRolls, setQualifiedRolls] = useState<string[]>([]);
   const [eliminatedRolls, setEliminatedRolls] = useState<string[]>([]);
 
+  const { data: competition } = useGetCompetition();
+
   useEffect(() => {
     socket.connect();
     
-    socket.emit('admin_join', { token: 'projector_display_only' }); // Using a dummy token for projector, server should allow read-only based on role or ignore
+    socket.emit('admin_join', { token: 'projector_display_only', competitionId: competition?.id }); // Using a dummy token for projector, server should allow read-only based on role or ignore
 
     const onCompetitionState = (data: any) => {
       setParticipantCount(data.participantCount || 0);
@@ -118,7 +121,7 @@ export default function Projector() {
       socket.off('qualification_summary');
       socket.off('finalist_reveal');
     };
-  }, []);
+  }, [competition?.id]);
 
 
   // Handle countdown effect

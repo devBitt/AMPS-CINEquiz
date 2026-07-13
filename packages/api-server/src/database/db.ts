@@ -63,6 +63,7 @@ function seedIfEmpty() {
     { number: 2, emoji: "🕷️🏙️🕸️", answers: ["spider-man", "spiderman", "spider man"], time: 35 },
     { number: 3, emoji: "🧊❄️👸⛄", answers: ["frozen"], time: 40 },
     { number: 4, emoji: "🤖🚗🔴⚙️", answers: ["transformers"], time: 50 },
+    { number: 5, emoji: "🦇🃏🌃🔋", answers: ["the dark knight", "dark knight", "batman"], time: 60 },
   ];
 
   const insertRound = db.prepare(

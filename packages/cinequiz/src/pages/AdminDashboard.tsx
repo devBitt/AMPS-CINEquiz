@@ -32,6 +32,8 @@ export default function AdminDashboard() {
   
   const token = typeof window !== 'undefined' ? localStorage.getItem('cinequiz_admin_token') : null;
 
+  const { data: competition, refetch: refetchComp } = useGetCompetition();
+
   useEffect(() => {
     if (!token) {
       navigate('/admin/login');
@@ -40,14 +42,12 @@ export default function AdminDashboard() {
     
     // Connect socket for admin live monitoring
     socket.connect();
-    socket.emit('admin_join', { token });
+    socket.emit('admin_join', { token, competitionId: competition?.id });
     
     return () => {
-      socket.off('admin_join');
+      // Clean up listeners if needed
     };
-  }, [token, navigate]);
-
-  const { data: competition, refetch: refetchComp } = useGetCompetition();
+  }, [token, navigate, competition?.id]);
   
   const emergencyStopMut = useEmergencyStop();
 

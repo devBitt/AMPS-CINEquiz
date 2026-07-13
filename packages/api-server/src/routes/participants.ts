@@ -101,16 +101,19 @@ participantsRouter.get("/", requireAdmin, (req, res) => {
       q1.qualified as round1Qualified,
       q2.qualified as round2Qualified,
       q3.qualified as round3Qualified,
-      q4.qualified as round4Qualified
+      q4.qualified as round4Qualified,
+      q5.qualified as round5Qualified
     FROM participants p
     LEFT JOIN rounds r1 ON r1.competition_id = p.competition_id AND r1.round_number = 1
     LEFT JOIN rounds r2 ON r2.competition_id = p.competition_id AND r2.round_number = 2
     LEFT JOIN rounds r3 ON r3.competition_id = p.competition_id AND r3.round_number = 3
     LEFT JOIN rounds r4 ON r4.competition_id = p.competition_id AND r4.round_number = 4
+    LEFT JOIN rounds r5 ON r5.competition_id = p.competition_id AND r5.round_number = 5
     LEFT JOIN qualifications q1 ON q1.participant_id = p.id AND q1.round_id = r1.id
     LEFT JOIN qualifications q2 ON q2.participant_id = p.id AND q2.round_id = r2.id
     LEFT JOIN qualifications q3 ON q3.participant_id = p.id AND q3.round_id = r3.id
     LEFT JOIN qualifications q4 ON q4.participant_id = p.id AND q4.round_id = r4.id
+    LEFT JOIN qualifications q5 ON q5.participant_id = p.id AND q5.round_id = r5.id
     WHERE 1=1
   `;
   const params: unknown[] = [];
@@ -135,6 +138,7 @@ participantsRouter.get("/", requireAdmin, (req, res) => {
     round2Qualified: number | null;
     round3Qualified: number | null;
     round4Qualified: number | null;
+    round5Qualified: number | null;
   }[];
 
   const result = rows.map((r) => ({
@@ -146,6 +150,7 @@ participantsRouter.get("/", requireAdmin, (req, res) => {
     round2Status: r.round2Qualified === null ? null : r.round2Qualified ? "qualified" : "eliminated",
     round3Status: r.round3Qualified === null ? null : r.round3Qualified ? "qualified" : "eliminated",
     round4Status: r.round4Qualified === null ? null : r.round4Qualified ? "qualified" : "eliminated",
+    round5Status: r.round5Qualified === null ? null : r.round5Qualified ? "qualified" : "eliminated",
   }));
 
   res.json(result);

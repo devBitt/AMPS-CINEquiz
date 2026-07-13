@@ -64,11 +64,29 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
   // Determine how many should advance based on round number
   let targetCount: number;
   switch (round.round_number) {
-    case 1: targetCount = Math.floor(n * 0.4); break;
-    case 2: targetCount = Math.floor(n * 0.3); break;
-    case 3: targetCount = Math.floor(n * 0.25); break;
-    case 4: targetCount = 2; break;
-    default: targetCount = Math.floor(n * 0.5);
+    case 1:
+      targetCount = Math.floor(n * 0.4);
+      break;
+    case 2:
+      if (n <= 20) {
+        targetCount = Math.floor(n * 0.6);
+      } else if (n > 20 && n <= 30) {
+        targetCount = Math.floor(n * 0.5);
+      } else {
+        targetCount = Math.floor(n * 0.4);
+      }
+      break;
+    case 3:
+      targetCount = Math.floor(n * 0.6);
+      break;
+    case 4:
+      targetCount = Math.floor(n * 0.5);
+      break;
+    case 5:
+      targetCount = 2;
+      break;
+    default:
+      targetCount = Math.floor(n * 0.5);
   }
 
   // Never qualify more than who answered correctly — wrong answers always eliminate
@@ -104,7 +122,7 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
       insertQual.run(uuidv4(), pId, roundId, 0, reason);
       db.prepare("UPDATE participants SET current_status = 'eliminated' WHERE id = ?").run(pId);
     }
-    if (round.round_number === 4) {
+    if (round.round_number === 5) {
       for (const pId of qualifiedIds) {
         db.prepare("UPDATE participants SET current_status = 'finalist' WHERE id = ?").run(pId);
       }
@@ -131,7 +149,7 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
       io.to(p.socket_id).emit("qualification_result", { qualified: true });
     } else if (eliminatedIds.has(p.id) || p.current_status === "eliminated") {
       io.to(p.socket_id).emit("qualification_result", { qualified: false });
-      if (round.round_number >= 4) {
+      if (round.round_number >= 5) {
         io.to(p.socket_id).emit("eliminated_final");
       }
     }
@@ -151,7 +169,7 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
   db.prepare("UPDATE competitions SET current_round = ? WHERE id = ?").run(round.round_number, competitionId);
 
 
-  if (round.round_number === 4) {
+  if (round.round_number === 5) {
     const finalists = db
       .prepare("SELECT id, roll_number FROM participants WHERE competition_id = ? AND current_status = 'finalist'")
       .all(competitionId) as { id: string; roll_number: string }[];
