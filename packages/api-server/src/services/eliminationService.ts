@@ -24,6 +24,12 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
     return;
   }
 
+  const maxRound = db
+    .prepare("SELECT MAX(round_number) as max_round FROM rounds WHERE competition_id = ?")
+    .get(competitionId) as { max_round: number } | undefined;
+  
+  const isFinalRound = maxRound && round.round_number === maxRound.max_round;
+
   const activeParticipants = db
     .prepare("SELECT id, roll_number FROM participants WHERE competition_id = ? AND current_status = 'active'")
     .all(competitionId) as { id: string; roll_number: string }[];
@@ -122,7 +128,7 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
       insertQual.run(uuidv4(), pId, roundId, 0, reason);
       db.prepare("UPDATE participants SET current_status = 'eliminated' WHERE id = ?").run(pId);
     }
-    if (round.round_number === 5) {
+    if (isFinalRound) {
       for (const pId of qualifiedIds) {
         db.prepare("UPDATE participants SET current_status = 'finalist' WHERE id = ?").run(pId);
       }
@@ -149,7 +155,7 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
       io.to(p.socket_id).emit("qualification_result", { qualified: true });
     } else if (eliminatedIds.has(p.id) || p.current_status === "eliminated") {
       io.to(p.socket_id).emit("qualification_result", { qualified: false });
-      if (round.round_number >= 5) {
+      if (isFinalRound) {
         io.to(p.socket_id).emit("eliminated_final");
       }
     }
@@ -166,15 +172,19 @@ export async function computeQualifiers(roundId: string, competitionId: string, 
   io.to(`projector_${competitionId}`).emit("qualification_summary", summary);
   io.to(`admin_${competitionId}`).emit("qualification_summary", summary);
 
-  db.prepare("UPDATE competitions SET current_round = ? WHERE id = ?").run(round.round_number, competitionId);
+  if (isFinalRound) {
+    db.prepare("UPDATE competitions SET status = 'completed', current_round = ? WHERE id = ?").run(round.round_number, competitionId);
+  } else {
+    db.prepare("UPDATE competitions SET current_round = ? WHERE id = ?").run(round.round_number, competitionId);
+  }
 
-
-  if (round.round_number === 5) {
+  if (isFinalRound) {
     const finalists = db
       .prepare("SELECT id, roll_number FROM participants WHERE competition_id = ? AND current_status = 'finalist'")
       .all(competitionId) as { id: string; roll_number: string }[];
     const finalistData = finalists.map((f) => ({ id: f.id, rollNumber: f.roll_number }));
-    io.to(`projector_${competitionId}`).emit("finalists_ready", { finalists: finalistData });
+    io.to(`projector_${competitionId}`).emit("finalist_reveal", { finalists: finalistData });
     io.to(`admin_${competitionId}`).emit("finalists_ready", { finalists: finalistData });
+    io.to(`comp_${competitionId}`).emit("finalist_reveal", { finalists: finalistData });
   }
 }
